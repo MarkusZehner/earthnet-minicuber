@@ -20,6 +20,7 @@ import random
 
 from .provider import PROVIDERS
 
+
 def compute_scale_and_offset(da, n=16):
     """Calculate offset and scale factor for int conversion
 
@@ -37,6 +38,7 @@ def compute_scale_and_offset(da, n=16):
 
     return scale_factor, add_offset
 
+
 class Minicuber:
 
     def __init__(self, specs):
@@ -52,13 +54,15 @@ class Minicuber:
             self.full_time_interval = self.time_interval
 
         if "primary_provider" in specs:
-            specs["providers"] =  [specs["primary_provider"]] + specs["other_providers"]
+            specs["providers"] = [specs["primary_provider"]] + \
+                specs["other_providers"]
 
-        self.providers = [PROVIDERS[p["name"]](**p["kwargs"]) for p in specs["providers"]]
+        self.providers = [PROVIDERS[p["name"]](
+            **p["kwargs"]) for p in specs["providers"]]
 
         self.temporal_providers = [p for p in self.providers if p.is_temporal]
-        self.spatial_providers = [p for p in self.providers if not p.is_temporal]
-
+        self.spatial_providers = [
+            p for p in self.providers if not p.is_temporal]
 
     @property
     def monthly_intervals(self):
@@ -69,13 +73,16 @@ class Minicuber:
         monthend = monthstart + pd.offsets.MonthEnd()
         while (monthend < end-pd.Timedelta("15 days")):
             if (monthend - monthstart) < pd.Timedelta("15 days"):
-                monthend = monthend + pd.Timedelta("1 days") + pd.offsets.MonthEnd()
+                monthend = monthend + \
+                    pd.Timedelta("1 days") + pd.offsets.MonthEnd()
             if monthend > end-pd.Timedelta("15 days"):
                 break
-            monthly_intervals.append(monthstart.strftime('%Y-%m-%d') + "/" + monthend.strftime('%Y-%m-%d'))
+            monthly_intervals.append(monthstart.strftime(
+                '%Y-%m-%d') + "/" + monthend.strftime('%Y-%m-%d'))
             monthstart = monthend + pd.Timedelta("1 days")
             monthend = monthstart + pd.offsets.MonthEnd()
-        monthly_intervals.append(monthstart.strftime('%Y-%m-%d') + "/" + end.strftime('%Y-%m-%d'))
+        monthly_intervals.append(monthstart.strftime(
+            '%Y-%m-%d') + "/" + end.strftime('%Y-%m-%d'))
         return monthly_intervals
 
     @property
@@ -83,7 +90,8 @@ class Minicuber:
 
         utm_epsg = int(query_utm_crs_info(
             datum_name="WGS 84",
-            area_of_interest=AreaOfInterest(self.lon_lat[0], self.lon_lat[1], self.lon_lat[0], self.lon_lat[1])
+            area_of_interest=AreaOfInterest(
+                self.lon_lat[0], self.lon_lat[1], self.lon_lat[0], self.lon_lat[1])
         )[0].code)
 
         transformer = Transformer.from_crs(4326, utm_epsg, always_xy=True)
@@ -91,12 +99,15 @@ class Minicuber:
         x_center, y_center = transformer.transform(*self.lon_lat)
 
         nx, ny = self.xy_shape
-        
-        x_left, x_right = x_center - self.resolution * (nx//2), x_center + self.resolution * (nx//2)
 
-        y_top, y_bottom = y_center + self.resolution * (ny//2), y_center - self.resolution * (ny//2)
+        x_left, x_right = x_center - self.resolution * \
+            (nx//2), x_center + self.resolution * (nx//2)
 
-        return transformer.transform_bounds(x_left, y_bottom, x_right, y_top, direction = 'INVERSE') # left, bottom, right, top
+        y_top, y_bottom = y_center + self.resolution * \
+            (ny//2), y_center - self.resolution * (ny//2)
+
+        # left, bottom, right, top
+        return transformer.transform_bounds(x_left, y_bottom, x_right, y_top, direction='INVERSE')
 
     @property
     def padded_bbox(self):
@@ -104,7 +115,6 @@ class Minicuber:
         lat_extra = (top - bottom) / self.xy_shape[0] * 6
         lon_extra = (right - left) / self.xy_shape[1] * 6
         return left - lon_extra, bottom - lat_extra, right + lon_extra, top + lat_extra
-
 
     @property
     def lon_lat_grid(self):
@@ -120,30 +130,34 @@ class Minicuber:
 
         if ("x" in product_cube.coords) and ("y" in product_cube.coords):
 
-            x, y = product_cube.x.values, product_cube.y.values
+            # x, y = product_cube.x.values, product_cube.y.values
 
             product_epsg = product_cube.attrs["epsg"]
 
-            transformer = Transformer.from_crs(4326, product_epsg, always_xy=True)
+            transformer = Transformer.from_crs(
+                4326, product_epsg, always_xy=True)
 
             lon_grid, lat_grid = self.lon_lat_grid
 
             new_x, new_y = transformer.transform(lon_grid, lat_grid)
 
-            
-            product_cube_nearest = product_cube.filter_by_attrs(interpolation_type=lambda v: ((v is None) or (v == "nearest")))
-            product_cube_linear = product_cube.filter_by_attrs(interpolation_type="linear")
+            product_cube_nearest = product_cube.filter_by_attrs(interpolation_type=lambda v:
+                                                                ((v is None) or (v == "nearest")))
+            product_cube_linear = product_cube.filter_by_attrs(
+                interpolation_type="linear")
             if len(product_cube_nearest) > 0:
-                product_cube_nearest = product_cube_nearest.interp(x = new_x, y = new_y, method = "nearest")
+                product_cube_nearest = product_cube_nearest.interp(
+                    x=new_x, y=new_y, method="nearest")
             if len(product_cube_linear) > 0:
-                product_cube_linear = product_cube_linear.interp(x = new_x, y = new_y, method = "linear")
+                product_cube_linear = product_cube_linear.interp(
+                    x=new_x, y=new_y, method="linear")
             if (len(product_cube_nearest) > 0) and (len(product_cube_linear) > 0):
-                product_cube = xr.merge([product_cube_nearest, product_cube_linear])
+                product_cube = xr.merge(
+                    [product_cube_nearest, product_cube_linear])
             elif (len(product_cube_linear) > 0):
                 product_cube = product_cube_linear
             else:
                 product_cube = product_cube_nearest
-            
 
             product_cube["x"], product_cube["y"] = lon_grid, lat_grid
 
@@ -151,32 +165,37 @@ class Minicuber:
 
         elif ("lat" in product_cube.coords) and ("lon" in product_cube.coords):
             lon_grid, lat_grid = self.lon_lat_grid
-            product_cube_nearest = product_cube.filter_by_attrs(interpolation_type=lambda v: ((v is None) or (v == "nearest")))
+            product_cube_nearest = product_cube.filter_by_attrs(
+                interpolation_type=lambda v: ((v is None) or (v == "nearest")))
             if len(product_cube_nearest) > 0:
-                product_cube_nearest = product_cube_nearest.interp(lon = lon_grid, lat = lat_grid, method = "nearest")
-            product_cube_linear = product_cube.filter_by_attrs(interpolation_type="linear")
+                product_cube_nearest = product_cube_nearest.interp(
+                    lon=lon_grid, lat=lat_grid, method="nearest")
+            product_cube_linear = product_cube.filter_by_attrs(
+                interpolation_type="linear")
             if len(product_cube_linear) > 0:
-                product_cube_linear = product_cube_linear.interp(lon = lon_grid, lat = lat_grid, method = "linear")
+                product_cube_linear = product_cube_linear.interp(
+                    lon=lon_grid, lat=lat_grid, method="linear")
             if (len(product_cube_nearest) > 0) and (len(product_cube_linear) > 0):
-                product_cube = xr.merge([product_cube_nearest, product_cube_linear])
+                product_cube = xr.merge(
+                    [product_cube_nearest, product_cube_linear])
             elif (len(product_cube_linear) > 0):
                 product_cube = product_cube_linear
             else:
                 product_cube = product_cube_nearest
-        
+
         product_cube.attrs = {}
 
         return product_cube
 
-
-
     @classmethod
-    def load_minicube(cls, specs, verbose = True, compute = False):
+    def load_minicube(cls, specs, verbose=True, compute=False):
 
         self = cls(specs)
 
         if not compute and (len(self.monthly_intervals) > 3):
-            warnings.warn("You are querying a long time interval with compute = False, this might lead to failure in the dask sheduler and high memory consumption upon calling .compute(). Consider using compute = True instead.")
+            warnings.warn("""You are querying a long time interval with compute = False,
+                          this might lead to failure in the dask sheduler and high memory
+                          consumption upon calling .compute(). Consider using compute = True instead.""")
 
         warnings.filterwarnings('ignore')
 
@@ -187,19 +206,23 @@ class Minicuber:
             for provider in self.temporal_providers:
 
                 if verbose:
-                    print(f"Loading {provider.__class__.__name__} for {time_interval}")
+                    print(f"Loading {provider.__class__.__name__} for {
+                          time_interval}")
 
-                product_cube = provider.load_data(self.padded_bbox, time_interval, full_time_interval = self.full_time_interval)
+                product_cube = provider.load_data(
+                    self.padded_bbox, time_interval, full_time_interval=self.full_time_interval)
 
                 if product_cube is not None:
                     if cube is None:
                         cube = self.regrid_product_cube(product_cube)
                     else:
-                        cube = xr.merge([cube, self.regrid_product_cube(product_cube)])
+                        cube = xr.merge(
+                            [cube, self.regrid_product_cube(product_cube)])
                 else:
                     if verbose:
-                        print(f"Skipping {provider.__class__.__name__} for {time_interval} - no data found.")
-            
+                        print(f"Skipping {provider.__class__.__name__} for {
+                              time_interval} - no data found.")
+
             if cube is not None:
                 if compute:
                     if verbose:
@@ -208,8 +231,8 @@ class Minicuber:
                 else:
                     all_data.append(cube)
             cube = None
-        
-        cube = xr.merge(all_data, combine_attrs = 'override')
+
+        cube = xr.merge(all_data, combine_attrs='override')
 
         for provider in self.spatial_providers:
             if verbose:
@@ -219,26 +242,28 @@ class Minicuber:
                 if cube is None:
                     cube = self.regrid_product_cube(product_cube)
                 else:
-                    cube = xr.merge([cube, self.regrid_product_cube(product_cube)])
+                    cube = xr.merge(
+                        [cube, self.regrid_product_cube(product_cube)])
             else:
                 if verbose:
-                    print(f"Skipping {provider.__class__.__name__} - no data found.")
+                    print(f"Skipping {
+                          provider.__class__.__name__} - no data found.")
 
         if compute:
             cube = cube.compute()
-        
+
         if "time" in cube:
             cube['time'] = pd.DatetimeIndex(cube['time'].values)
 
-            cube = cube.sel(time = slice(self.time_interval[:10], self.time_interval[-10:]))
+            cube = cube.sel(time=slice(
+                self.time_interval[:10], self.time_interval[-10:]))
 
         cube.attrs = {
-            "history": f"Created on {datetime.datetime.now()} with the earthnet-minicuber Python package. See https://github.com/earthnet2021/earthnet-minicuber"
+            "history": f"""Created on {datetime.datetime.now()} with the earthnet-minicuber
+            Python package. See https://github.com/earthnet2021/earthnet-minicuber"""
         }
 
         return cube
-
-
 
     @staticmethod
     def save_minicube_netcdf(minicube, savepath):
@@ -250,14 +275,16 @@ class Minicuber:
             if v in ["time", "time_clim", "lat", "lon"]:
                 continue
             elif ("interpolation_type" in minicube[v].attrs) and (minicube[v].attrs["interpolation_type"] == "linear"):
-                scale_factor, add_offset = compute_scale_and_offset(minicube[v].values)
+                scale_factor, add_offset = compute_scale_and_offset(
+                    minicube[v].values)
             else:
                 scale_factor, add_offset = 1.0, 0.0
-                            
-            if abs(scale_factor) < 1e-8 or np.isnan(scale_factor) or (scale_factor == 1.0 and minicube[v].max() > 32766):
+
+            if abs(scale_factor) < 1e-8 or np.isnan(scale_factor) or (scale_factor == 1.0 and
+                                                                      minicube[v].max() > 32766):
                 encoding[v] = {"zlib": True, "complevel": 9}
             else:
-                encoding[v] =  {
+                encoding[v] = {
                     "dtype": 'int16',
                     "scale_factor": scale_factor,
                     "add_offset": add_offset,
@@ -271,12 +298,12 @@ class Minicuber:
         else:
             savepath.parents[0].mkdir(exist_ok=True, parents=True)
 
-        minicube.to_netcdf(savepath, encoding = encoding, compute = True)
+        minicube.to_netcdf(savepath, encoding=encoding, compute=True)
 
     @classmethod
-    def save_minicube(cls, specs, savepath, verbose = True):
+    def save_minicube(cls, specs, savepath, verbose=True):
 
-        minicube = cls.load_minicube(specs, verbose = verbose, compute = True)            
+        minicube = cls.load_minicube(specs, verbose=verbose, compute=True)
 
         if verbose:
             print(f"Downloading minicube at {specs['lon_lat']}")
@@ -288,11 +315,10 @@ class Minicuber:
 
         cls.save_minicube_netcdf(minicube, savepath)
 
-
     @classmethod
     def save_minicube_mp(cls, pars):
         starttime = time.time()
-        time.sleep(random.uniform(0,2))
+        time.sleep(random.uniform(0, 2))
         done = False
         c = 0
         while not done:
@@ -326,9 +352,10 @@ class Minicuber:
                 return
             except Exception as err:
                 traceback.print_exc()
-                print(f"Unknown exception.. {err}... skipping {pars['savepath']}")
+                print(f"Unknown exception.. {
+                      err}... skipping {pars['savepath']}")
                 done = True
-            c+=1
+            c += 1
             if c > 5:
                 done = True
                 print(f"Pystac connection error.. skipping {pars['savepath']}")

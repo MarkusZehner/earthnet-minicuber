@@ -36,18 +36,26 @@ import earthnet_minicuber as emc
 2. Creating a dictionary with specifications of the desired minicube
 ```Python
 specs = {
-    "lon_lat": (43.598946, 3.087414), # center pixel
-    "xy_shape": (256, 256), # width, height of cutout around center pixel
-    "resolution": 10, # in meters.. will use this on a local UTM grid..
+    "lon_lat": (43.598946, 3.087414),  # center pixel
+    "xy_shape": (256, 256),  # width, height of cutout around center pixel
+    "resolution": 10,  # in meters.. will use this on a local UTM grid..
     "time_interval": "2021-07-01/2021-07-31",
     "providers": [
         {
             "name": "s2",
-            "kwargs": {"bands": ["B02", "B03", "B04", "B8A"], "best_orbit_filter": True, "five_daily_filter": False, "brdf_correction": True, "cloud_mask": True, "aws_bucket": "planetary_computer"}
+            "kwargs": {"bands": ["B02", "B03", "B04", "B8A"],
+                       "best_orbit_filter": True,
+                       "five_daily_filter": False,
+                       "brdf_correction": True,
+                       "cloud_mask": True,
+                       "aws_bucket": "planetary_computer"}
         },
         {
             "name": "s1",
-            "kwargs": {"bands": ["vv", "vh"], "speckle_filter": True, "speckle_filter_kwargs": {"type": "lee", "size": 9}, "aws_bucket": "planetary_computer"} 
+            "kwargs": {"bands": ["vv", "vh"],
+                       "speckle_filter": True,
+                       "speckle_filter_kwargs": {"type": "lee", "size": 9},
+                       "aws_bucket": "planetary_computer"}
         },
         {
             "name": "ndviclim",
@@ -59,15 +67,16 @@ specs = {
         },
         {
             "name": "esawc",
-            "kwargs": {"bands": ["lc"], "aws_bucket": "planetary_computer"}
+            "kwargs": {"bands": ["lc"],
+                       "aws_bucket": "planetary_computer"}
         }
-        ]
+    ]
 }
 ```
 
 3. Downloading the minicube
 ```Python
-mc = emc.load_minicube(specs, compute = True)
+mc = emc.load_minicube(specs, compute=True)
 ```
 
 4. Plotting cloud-masked Sentinel 2 RGB imagery

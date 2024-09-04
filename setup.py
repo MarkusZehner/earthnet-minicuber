@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 
 with open("README.md", "r") as fh:
@@ -27,25 +27,26 @@ install_requires = [
     "fsspec",
     "aiohttp",
     "odc-algo"
-    ]
+]
 
 
-setup(name='earthnet-minicuber', 
-        version='0.1.3',
-        description="EarthNet Minicuber",
-        author="Vitus Benson, Christian Requena-Mesa",
-        author_email="vbenson@bgc-jena.mpg.de",
-        url="https://earthnet.tech",
-        long_description=long_description,
-        long_description_content_type="text/markdown",
-        classifiers=[
-                "Intended Audience :: Science/Research",
-                "License :: OSI Approved :: MIT License",
-                "Programming Language :: Python :: 3"
-                 ],
-        packages=['earthnet_minicuber', 'earthnet_minicuber.provider', 'earthnet_minicuber.provider.s2'],#find_packages(),
-        install_requires=install_requires,
-        extras_require={
-            "EE": ["earthengine-api","wxee","eemont"],
-        }
-        )
+setup(name='earthnet-minicuber',
+      version='0.1.3',
+      description="EarthNet Minicuber",
+      author="Vitus Benson, Christian Requena-Mesa",
+      author_email="vbenson@bgc-jena.mpg.de",
+      url="https://earthnet.tech",
+      long_description=long_description,
+      long_description_content_type="text/markdown",
+      classifiers=[
+          "Intended Audience :: Science/Research",
+          "License :: OSI Approved :: MIT License",
+          "Programming Language :: Python :: 3"
+      ],
+      packages=['earthnet_minicuber', 'earthnet_minicuber.provider',
+                'earthnet_minicuber.provider.s2'],  # find_packages(),
+      install_requires=install_requires,
+      extras_require={
+          "EE": ["earthengine-api", "wxee", "eemont"],
+      }
+      )

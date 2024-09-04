@@ -4,7 +4,6 @@ __version__ = "0.1.3"
 __author__ = "Vitus Benson"
 
 
-
 from . import provider, minicuber, plot
 
 from earthnet_minicuber.minicuber import Minicuber
